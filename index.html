@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="mr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Marathi Typing Test — Canvas Ring (Kruti Dev)</title>
+<style>
+  :root{--bg:#2f4aa0;--panel:#cfe9d6;--success:#059669;--danger:#ef4444;--primary:#2f4aa0}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui, -apple-system, "Segoe UI", Roboto, Arial;}
+  body{background:linear-gradient(180deg,#3d57b0,#2f4aa0);display:flex;align-items:center;justify-content:center;padding:20px;color:#0b1220}
+  .app{width:1000px;max-width:calc(100% - 40px);border-radius:18px;overflow:hidden;box-shadow:0 18px 50px rgba(2,6,23,0.35);background:linear-gradient(180deg,#f8fbff,#eef4ff)}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#182240,#2f4aa0);color:white}
+  .brand{display:flex;gap:12px;align-items:center}
+  .brand .logo{background:#ffffff14;color:white;padding:8px 12px;border-radius:10px;font-weight:700}
+  .main{display:flex;gap:16px;padding:18px;align-items:flex-start}
+  .canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#cfd8ff,#e5e9ff);border-radius:12px;padding:18px;box-shadow:inset 0 6px 20px rgba(19,40,94,0.06)}
+  canvas{background:transparent;border-radius:8px;display:block}
+  .right{width:300px;display:flex;flex-direction:column;gap:12px}
+  .card{background:white;border-radius:10px;padding:12px;box-shadow:0 8px 24px rgba(6,10,20,0.06)}
+  .btn{display:inline-block;padding:10px 12px;border-radius:10px;border:0;background:linear-gradient(180deg,var(--primary),#2a3f86);color:white;font-weight:700;cursor:pointer;width:100%}
+  .btn.ghost{background:transparent;border:1px solid rgba(0,0,0,0.06);color:var(--primary);font-weight:700}
+  #input{width:100%;padding:10px;border-radius:8px;border:1px solid #e6eef8;font-size:16px;font-family:"Kruti Dev 055","Kruti Dev",monospace}
+  .statusbar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(180deg,#dff3e6,#cfe9d6);border-top:1px solid rgba(0,0,0,0.04)}
+  .status-left{display:flex;gap:22px;align-items:center;font-weight:700}
+  .status-item{display:flex;flex-direction:column;align-items:flex-start}
+  .status-item .val{font-size:18px}
+  .small-muted{font-size:12px;color:#334155}
+  @media (max-width:880px){.main{flex-direction:column}.right{width:100%}}
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">म</div>
+        <div>
+          <div style="font-weight:700">Marathi Typing Test</div>
+          <div style="font-size:12px;color:#dbe8ff">Kruti Dev — Swar & Vyanjan • Circle Game style</div>
+        </div>
+      </div>
+      <div style="font-weight:700;color:#dbe8ff">Type after pressing any key to begin timing</div>
+    </div>
+    <div class="main">
+      <div class="canvas-wrap card" style="min-height:480px;min-width:700px;">
+        <canvas id="ringCanvas" width="700" height="460"></canvas>
+      </div>
+      <div class="right">
+        <div class="card">
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button class="btn" id="startSwar">Start Swar</button>
+            <button class="btn ghost" id="startVyanjan" style="width:auto;padding:10px 14px">Vyanjan</button>
+          </div>
+          <div style="margin-top:8px">
+            <input id="input" placeholder="Type here — space separated" autocomplete="off" disabled />
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn ghost" id="resetBtn" style="flex:1">Reset</button>
+              <button class="btn ghost" id="focusBtn" style="flex:1">Focus</button>
+            </div>
+          </div>
+        </div>
+        <div class="card small">
+          <div style="font-weight:700;margin-bottom:8px">Live stats</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><div class="small-muted">Correct</div><div id="live-correct" style="font-weight:800;font-size:20px;color:var(--success)">0</div></div>
+            <div><div class="small-muted">Mistakes</div><div id="live-mistake" style="font-weight:800;font-size:20px;color:var(--danger)">0</div></div>
+            <div><div class="small-muted">Accuracy</div><div id="live-accuracy" style="font-weight:800;font-size:20px">0%</div></div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="small-muted">Tip: Use Kruti Dev font.</div>
+        </div>
+        <div class="card small">
+          <div style="font-weight:700;margin-bottom:6px">Preview tokens</div>
+          <div id="preview" class="small muted">Tokens appear on the ring when you start.</div>
+        </div>
+      </div>
+    </div>
+    <div class="statusbar">
+      <div class="status-left">
+        <div class="status-item"><div class="small-muted">Score</div><div class="val" id="score">0</div></div>
+        <div class="status-item"><div class="small-muted">Time</div><div class="val" id="live-time">0.00s</div></div>
+      </div>
+    </div>
+  </div>
+<script>
+const swar = ["v","vk","b","bZ","m","Å",",",",s","vks","vkS","va","v%"];
+const vyanjan = ["d","[k","x","?k","³","p","N","t",">","=","V","B","M","<",".k","r","Fk","n","/k","u","i","Q","c","Hk","e",";","j","y","o","“k","‘k","l","g","G","{k","K"];
+const canvas = document.getElementById('ringCanvas');
+const ctx = canvas.getContext('2d');
+const inputEl = document.getElementById('input');
+const startSwarBtn = document.getElementById('startSwar');
+const startVyanjanBtn = document.getElementById('startVyanjan');
+const resetBtn = document.getElementById('resetBtn');
+const focusBtn = document.getElementById('focusBtn');
+const liveCorrect = document.getElementById('live-correct');
+const liveMistake = document.getElementById('live-mistake');
+const liveAccuracy = document.getElementById('live-accuracy');
+const scoreEl = document.getElementById('score');
+const liveTimeEl = document.getElementById('live-time');
+const previewEl = document.getElementById('preview');
+let currentSet = [], tokenStatus = [], typedTokens = [];
+let correctCount = 0, mistakeCount = 0, score = 0;
+let waitingForFirstKey = false, startTime = null, timerInterval = null;
+function computeLayout(){const W = canvas.width, H = canvas.height;return {W,H,cx:W/2,cy:H/2 - 10,radius:Math.min(W,H)*0.34};}
+function renderRing(){ctx.clearRect(0,0,canvas.width,canvas.height);const {cx,cy,radius} = computeLayout();const n = currentSet.length;if(n===0){ctx.beginPath();ctx.arc(cx, cy, radius * 0.85, 0, Math.PI*2);ctx.fillStyle = "#f1f3f6";ctx.fill();ctx.fillStyle = "#334155";ctx.font = "20px Inter, Arial";ctx.textAlign = "center";ctx.fillText("Press Start", cx, cy);return;}const tokenSize=Math.max(36,Math.min(56,radius*0.18)),startAngle=-Math.PI/2-(Math.PI*0.06);for(let i=0;i<n;i++){const angle=startAngle+(i*(Math.PI*2/n)),tx=cx+Math.cos(angle)*radius,ty=cy+Math.sin(angle)*radius,st=tokenStatus[i]||'pending';ctx.beginPath();ctx.arc(tx,ty,tokenSize*0.52,0,Math.PI*2);ctx.fillStyle=st==='correct'?"#e6f8ee":st==='incorrect'?"#fff2f2":"#14183b";ctx.fill();ctx.font=`${tokenSize*0.6}px \"Kruti Dev 055\", \"Kruti Dev\", monospace`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle=st==='correct'?"#03764f":st==='incorrect'?"#9a1b0f":"#ffffff";ctx.fillText(currentSet[i], tx, ty+1);}ctx.beginPath();ctx.arc(cx, cy, radius*0.42,0,Math.PI*2);ctx.fillStyle="#eef2ff";ctx.fill();ctx.fillStyle="#111827";ctx.font="18px Inter, Arial";ctx.textAlign="center";ctx.fillText("Type the tokens", cx, cy);}
+function updateStats(){liveCorrect.textContent=correctCount;liveMistake.textContent=mistakeCount;liveAccuracy.textContent=(currentSet.length?((correctCount/currentSet.length)*100).toFixed(2):0)+"%";scoreEl.textContent=score;}
+inputEl.addEventListener('keydown',e=>{if(waitingForFirstKey){waitingForFirstKey=false;startTime=new Date();timerInterval=setInterval(updateTimer,50);}});
+inputEl.addEventListener('input',function(){const raw=this.value.replace(/'k/g,"‘k").replace(/\"k/g,"“k");typedTokens=raw.trim().length===0?[]:raw.trim().split(/\s+/);let c=0,m=0;for(let i=0;i<currentSet.length;i++){const got=typedTokens[i];if(got===undefined){tokenStatus[i]='pending';}else if(got===currentSet[i]){tokenStatus[i]='correct';c++;}else{tokenStatus[i]='incorrect';m++;}}correctCount=c;mistakeCount=m;updateStats();renderRing();if(currentSet.length>0&&typedTokens.length===currentSet.length&&typedTokens[currentSet.length-1]===currentSet[currentSet.length-1]){endTest();}});
+function updateTimer(){if(!startTime)return;liveTimeEl.textContent=((new Date()-startTime)/1000).toFixed(2)+'s';}
+function startTest(type){
+  if(type==='swar'){
+    currentSet=[...swar];
+  } else {
+    currentSet=[...vyanjan];
+  }
+  tokenStatus=new Array(currentSet.length).fill('pending');
+  typedTokens=[];correctCount=0;mistakeCount=0;score=0;
+  if(timerInterval)clearInterval(timerInterval);
+  startTime=null;waitingForFirstKey=true;
+  liveTimeEl.textContent='0.00s';inputEl.value='';inputEl.disabled=false;inputEl.focus();
+  previewEl.textContent=currentSet.join(' ');
+  updateStats();renderRing();
+}
+function endTest(){if(timerInterval)clearInterval(timerInterval);if(!startTime)startTime=new Date();const total=((new Date()-startTime)/1000).toFixed(2);liveTimeEl.textContent=total+'s';score=correctCount*10;scoreEl.textContent=score;inputEl.disabled=true;renderRing();}
+function resetTest(){currentSet=[];tokenStatus=[];typedTokens=[];correctCount=0;mistakeCount=0;score=0;if(timerInterval){clearInterval(timerInterval);timerInterval=null;}startTime=null;waitingForFirstKey=false;liveTimeEl.textContent='0.00s';inputEl.value='';inputEl.disabled=true;previewEl.textContent='Tokens appear on the ring when you start.';updateStats();renderRing();}
+function focusInput(){inputEl.focus();}
+startSwarBtn.addEventListener('click',()=>startTest('swar'));
+startVyanjanBtn.addEventListener('click',()=>startTest('vyanjan'));
+resetBtn.addEventListener('click',resetTest);
+focusBtn.addEventListener('click',focusInput);
+function fitCanvas(){const wrap=canvas.parentElement;const rect=wrap.getBoundingClientRect();canvas.width=Math.max(360,Math.min(900,rect.width-10));canvas.height=Math.max(300,Math.min(560,rect.height-10));renderRing();}
+window.addEventListener('resize',fitCanvas);
+resetTest();fitCanvas();
+</script>
+</body>
+</html>
